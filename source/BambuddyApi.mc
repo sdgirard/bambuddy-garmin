@@ -32,6 +32,11 @@ module BambuddyApi {
             options(Communications.HTTP_REQUEST_METHOD_GET), cb);
     }
 
+    function clearPlate(printerId as Number, cb as Method) as Void {
+        Communications.makeWebRequest(baseUrl() + "/printers/" + printerId + "/clear-plate", {},
+            options(Communications.HTTP_REQUEST_METHOD_POST), cb);
+    }
+
     function startItem(id as Number, cb as Method) as Void {
         Communications.makeWebRequest(baseUrl() + "/queue/" + id + "/start", {},
             options(Communications.HTTP_REQUEST_METHOD_POST), cb);

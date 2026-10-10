@@ -1,7 +1,7 @@
 # Bambuddy Remote (Garmin Connect IQ)
 
 Watch app to remote-control a [Bambuddy](https://github.com/maziggy/bambuddy) server:
-a **glance** (running job + ETA, "N in queue"), view the print queue, **start** (select/tap) and **stop** (hold menu) items.
+a **glance** (running job + ETA, "N in queue"), view the print queue; select/menu opens actions: **Start next** (confirms "plate cleared", acks the plate, starts the next job), start/stop item.
 
 ## Setup
 1. Install the Connect IQ SDK + VS Code "Monkey C" extension.
@@ -21,3 +21,8 @@ a **glance** (running job + ETA, "N in queue"), view the print queue, **start** 
   (HTTPS or LAN). Plain HTTP may be blocked on some devices - use HTTPS/reverse proxy if so.
 - Not compiled here (no SDK in this environment); expect minor type-check fixes.
 - Replace placeholder launcher icon; add glance view, confirm dialogs, printer status.
+
+## "Start next" flow (printer in the basement)
+Confirm dialog -> `GET /printers/{id}/status` -> if `awaiting_plate_clear`: `POST /printers/{id}/clear-plate`
+-> if the item is `manual_start`: `POST /queue/{id}/start` (otherwise the scheduler starts it).
+API key needs the "clear plate" printer permission. Items with no assigned printer are not supported yet.

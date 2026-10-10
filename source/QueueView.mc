@@ -8,6 +8,7 @@ class QueueView extends WatchUi.View {
     var items as Array = [];
     var index as Number = 0;
     var message as String = "Loading...";
+    var nextItem as Dictionary? = null;
 
     function initialize() {
         View.initialize();
@@ -27,7 +28,8 @@ class QueueView extends WatchUi.View {
         if (code == 200 && data instanceof Array) {
             items = [];
             for (var i = 0; i < data.size(); i++) {
-                if ((data[i] as Dictionary)["status"].equals("pending")) { items.add(data[i]); }
+                var st = (data[i] as Dictionary)["status"];
+                if (st.equals("pending") || st.equals("printing")) { items.add(data[i]); }
             }
             index = 0;
             message = items.size() == 0 ? "Queue empty" : "";
@@ -45,6 +47,43 @@ class QueueView extends WatchUi.View {
         if (items.size() > 0) {
             index = (index + delta + items.size()) % items.size();
             WatchUi.requestUpdate();
+        }
+    }
+
+    // Next job = first pending item in queue order.
+    function nextPending() as Dictionary? {
+        for (var i = 0; i < items.size(); i++) {
+            if ((items[i] as Dictionary)["status"].equals("pending")) { return items[i] as Dictionary; }
+        }
+        return null;
+    }
+
+    // "Plate cleared -> start next": ack plate, then start the item if it is staged.
+    function startNext() as Void {
+        var item = nextPending();
+        if (item == null) { message = "Nothing queued"; WatchUi.requestUpdate(); return; }
+        if (item["printer_id"] == null) { message = "Assign printer first"; WatchUi.requestUpdate(); return; }
+        nextItem = item;
+        message = "Starting...";
+        WatchUi.requestUpdate();
+        BambuddyApi.getPrinterStatus(item["printer_id"], method(:onNextStatus));
+    }
+
+    function onNextStatus(code as Number, data as Dictionary or String or Array or Null) as Void {
+        if (code != 200 || !(data instanceof Dictionary)) { onResult(code, null); return; }
+        if (data["awaiting_plate_clear"] == true) {
+            BambuddyApi.clearPlate(nextItem["printer_id"], method(:onNextCleared));
+        } else {
+            onNextCleared(200, null);
+        }
+    }
+
+    function onNextCleared(code as Number, data as Dictionary or String or Array or Null) as Void {
+        if (code != 200) { onResult(code, null); return; }
+        if (nextItem["manual_start"] == true) {
+            BambuddyApi.startItem(nextItem["id"], method(:onResult));
+        } else {
+            onResult(200, null);  // scheduler starts it now that the plate is acked
         }
     }
 
