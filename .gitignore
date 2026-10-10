@@ -1,0 +1,4 @@
+*.prg
+*.iq
+bin/
+developer_key*
