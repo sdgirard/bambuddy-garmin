@@ -25,7 +25,10 @@ class QueueView extends WatchUi.View {
 
     function onQueue(code as Number, data as Dictionary or String or Array or Null) as Void {
         if (code == 200 && data instanceof Array) {
-            items = data;
+            items = [];
+            for (var i = 0; i < data.size(); i++) {
+                if ((data[i] as Dictionary)["status"].equals("pending")) { items.add(data[i]); }
+            }
             index = 0;
             message = items.size() == 0 ? "Queue empty" : "";
         } else {

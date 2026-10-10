@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <iq:manifest xmlns:iq="http://www.garmin.com/xml/connectiq" version="3">
     <iq:application id="6f1c2a3e-8b4d-4c5e-9a7f-0b1d2e3f4a5b" type="watch-app" name="@Strings.AppName"
-        entry="BambuddyApp" launcherIcon="@Drawables.LauncherIcon" minApiLevel="3.2.0">
+        entry="BambuddyApp" launcherIcon="@Drawables.LauncherIcon" minApiLevel="4.0.0">
         <iq:products>
             <iq:product id="fenix7"/>
             <iq:product id="venu2"/>

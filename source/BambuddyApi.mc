@@ -4,6 +4,7 @@ import Toybox.Lang;
 
 // Thin client for the Bambuddy REST API (FastAPI, /api/v1, X-API-Key auth).
 // Endpoints: GET /queue/, POST /queue/{id}/start, POST /queue/{id}/stop
+(:glance)
 module BambuddyApi {
     function baseUrl() as String {
         var url = Properties.getValue("serverUrl") as String;
@@ -22,7 +23,7 @@ module BambuddyApi {
     }
 
     function getQueue(cb as Method) as Void {
-        Communications.makeWebRequest(baseUrl() + "/queue/", {"status" => "pending"},
+        Communications.makeWebRequest(baseUrl() + "/queue/", {},
             options(Communications.HTTP_REQUEST_METHOD_GET), cb);
     }
 
