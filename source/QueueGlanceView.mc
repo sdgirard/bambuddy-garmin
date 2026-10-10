@@ -7,12 +7,14 @@ import Toybox.WatchUi;
 
 // Glance: line 1 = running job + estimated completion time,
 //         line 2 = queue status ("N in queue").
-// Completion = started_at + print_time_seconds (estimate from the queue item;
-// the live printer ETA would need /printers/{id}/status - see README TODO).
+// Completion = now + remaining_time (minutes) from GET /printers/{id}/status (live).
+// Falls back to started_at + print_time_seconds if the status call fails.
 (:glance)
 class QueueGlanceView extends WatchUi.GlanceView {
     var line1 as String = "Loading...";
     var line2 as String = "";
+    var running as Dictionary? = null;
+    var pending as Number = 0;
 
     function initialize() {
         GlanceView.initialize();
@@ -29,30 +31,51 @@ class QueueGlanceView extends WatchUi.GlanceView {
             WatchUi.requestUpdate();
             return;
         }
-        var pending = 0;
-        var running = null;
+        pending = 0;
+        running = null;
         for (var i = 0; i < data.size(); i++) {
             var item = data[i] as Dictionary;
             if (item["status"].equals("printing")) { running = item; }
             else if (item["status"].equals("pending")) { pending++; }
         }
+        line2 = pending + " in queue";
         if (running == null) {
             line1 = "Idle";
+        } else if (running["printer_id"] != null) {
+            line1 = jobName() + etaText();
+            BambuddyApi.getPrinterStatus(running["printer_id"], method(:onStatus));
         } else {
-            var name = running["archive_name"] != null ? running["archive_name"] : running["library_file_name"];
-            line1 = (name != null ? name : "Job " + running["id"]) + etaText(running);
+            line1 = jobName() + etaText();
         }
-        line2 = pending + " in queue";
         WatchUi.requestUpdate();
     }
 
-    // " - done 14:32", or "" if the estimate is unknown.
-    function etaText(item as Dictionary) as String {
+    function onStatus(code as Number, data as Dictionary or String or Array or Null) as Void {
+        if (code == 200 && data instanceof Dictionary && data["remaining_time"] != null) {
+            var eta = Time.now().add(new Time.Duration((data["remaining_time"] as Number) * 60));
+            line1 = jobName() + " " + clock(eta);
+            if (data["progress"] != null) { line2 = (data["progress"] as Number).toNumber() + "% - " + pending + " in queue"; }
+            WatchUi.requestUpdate();
+        }
+    }
+
+    function jobName() as String {
+        var name = running["archive_name"] != null ? running["archive_name"] : running["library_file_name"];
+        return name != null ? name : "Job " + running["id"];
+    }
+
+    function clock(m as Time.Moment) as String {
+        var t = Gregorian.info(m, Time.FORMAT_SHORT);
+        return "done " + t.hour.format("%02d") + ":" + t.min.format("%02d");
+    }
+
+    // Fallback estimate: " done 14:32", or "" if unknown.
+    function etaText() as String {
+        var item = running as Dictionary;
         var start = parseIso(item["started_at"]);
         var secs = item["print_time_seconds"];
         if (start == null || secs == null) { return ""; }
-        var info = Gregorian.info(start.add(new Time.Duration(secs)), Time.FORMAT_SHORT);
-        return " - done " + info.hour.format("%02d") + ":" + info.min.format("%02d");
+        return " " + clock(start.add(new Time.Duration(secs)));
     }
 
     // Parses "YYYY-MM-DDTHH:MM:SS[...]" (server sends UTC) into a Moment.

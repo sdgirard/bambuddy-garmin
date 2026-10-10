@@ -16,7 +16,7 @@ a **glance** (running job + ETA, "N in queue"), view the print queue, **start** 
 - `POST /api/v1/queue/{id}/start`, `POST /api/v1/queue/{id}/stop`
 
 ## Known TODOs
-- Glance ETA is an estimate; use `/printers/{id}/status` for live remaining time. Needs Connect IQ API 4.0+.
+- Glance ETA uses live `remaining_time` (minutes, assumed) from `/printers/{id}/status`, falling back to `started_at` + `print_time_seconds`. Needs Connect IQ API 4.0+.
 - The watch reaches the server via the phone; the server must be reachable from the phone
   (HTTPS or LAN). Plain HTTP may be blocked on some devices - use HTTPS/reverse proxy if so.
 - Not compiled here (no SDK in this environment); expect minor type-check fixes.

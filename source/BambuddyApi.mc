@@ -27,6 +27,11 @@ module BambuddyApi {
             options(Communications.HTTP_REQUEST_METHOD_GET), cb);
     }
 
+    function getPrinterStatus(id as Number, cb as Method) as Void {
+        Communications.makeWebRequest(baseUrl() + "/printers/" + id + "/status", {},
+            options(Communications.HTTP_REQUEST_METHOD_GET), cb);
+    }
+
     function startItem(id as Number, cb as Method) as Void {
         Communications.makeWebRequest(baseUrl() + "/queue/" + id + "/start", {},
             options(Communications.HTTP_REQUEST_METHOD_POST), cb);
